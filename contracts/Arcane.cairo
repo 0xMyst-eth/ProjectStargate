@@ -38,13 +38,19 @@ from starkware.starknet.common.syscalls import (
     get_block_timestamp,
 )
 
+const MAX_STAR_SUPPLY = 1999
+const MAX_ARCANE_SUPPLY = 5555
 
 @storage_var
 func wizardNames( wizId : felt ) -> ( name : felt ):
 end
 
 @storage_var
-func curr_index_storage() -> ( index : felt ):
+func curr_star_index() -> ( index : felt ):
+end
+
+@storage_var
+func arcane_minted ( arcane_id : Uint256) -> ( res : felt ):
 end
 
 @storage_var
@@ -60,6 +66,10 @@ func constructor { syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_p
     ERC721_initializer(name, symbol)
     return()
 end
+
+#
+#   VIEW
+#
 
 
 @view
@@ -94,14 +104,25 @@ func view_get_keccak_hash{
     return (hashed_value)
 end
 
+#
+#   EXTERNAL
+#
+
 @external
-func mintWiz { syscall_ptr : felt*, pedersen_ptr: HashBuiltin*, range_check_ptr, bitwise_ptr : BitwiseBuiltin* }( wizName : felt ):
+func mintArcaneWiz { syscall_ptr : felt*, pedersen_ptr: HashBuiltin*, range_check_ptr, bitwise_ptr : BitwiseBuiltin* }( wiz_id : Uint256 , wizName : felt ):
     alloc_locals
+    # check for supply
+    let (already_minted) = arcane_minted.read(wiz_id)
+     with_attr error_message("Ownable: caller is not the owner"):
+        assert already_minted = FALSE
+    end
+
+
     let (caller_address) = get_caller_address()
-    let (curr_index) =curr_index_storage.read()
+    let (curr_index) =curr_star_index.read()
     let new_index = curr_index+1
     ERC721_mint(caller_address,Uint256(new_index,0))
-    curr_index_storage.write(new_index)
+    curr_star_index.write(new_index)
 
     # get random stat
     let (block_number) = get_block_number()
@@ -109,10 +130,15 @@ func mintWiz { syscall_ptr : felt*, pedersen_ptr: HashBuiltin*, range_check_ptr,
     let (stat) = view_get_keccak_hash(block_number,wizName)
     let (modulo_stat : Uint256,rem : Uint256) = uint256_unsigned_div_rem(stat,Uint256(100,0))
     let (modulo_test : Uint256,rem_test : Uint256) = uint256_unsigned_div_rem(Uint256(99,0),Uint256(10,0)) 
+
+    arcane_minted.write(wiz_id, TRUE)
  
     return()
 end
 
+#
+#   ERC721
+#
 
 @external
 func approve{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_check_ptr}(
@@ -142,6 +168,11 @@ func safeTransferFrom{pedersen_ptr : HashBuiltin*, syscall_ptr : felt*, range_ch
     return ()
 end
 
+#
+#   URI
+#
+
+@external
 func ERC721_tokenURI{
         syscall_ptr: felt*,
         pedersen_ptr: HashBuiltin*,
@@ -182,12 +213,13 @@ func _ERC721_baseTokenURI{
     return ()
 end
 
-
+@external
 func ERC721_setBaseTokenURI{
         syscall_ptr: felt*,
         pedersen_ptr: HashBuiltin*,
         range_check_ptr
     }(tokenURI_len: felt, tokenURI: felt*):
+    Ownable_only_owner()
     _ERC721_setBaseTokenURI(tokenURI_len, tokenURI)
     ERC721_base_tokenURI_len.write(tokenURI_len)
     return ()

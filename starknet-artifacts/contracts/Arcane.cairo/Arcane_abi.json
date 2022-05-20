@@ -146,11 +146,15 @@
     {
         "inputs": [
             {
+                "name": "wiz_id",
+                "type": "Uint256"
+            },
+            {
                 "name": "wizName",
                 "type": "felt"
             }
         ],
-        "name": "mintWiz",
+        "name": "mintArcaneWiz",
         "outputs": [],
         "type": "function"
     },
@@ -227,6 +231,41 @@
             }
         ],
         "name": "safeTransferFrom",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "token_id",
+                "type": "Uint256"
+            }
+        ],
+        "name": "ERC721_tokenURI",
+        "outputs": [
+            {
+                "name": "tokenURI_len",
+                "type": "felt"
+            },
+            {
+                "name": "tokenURI",
+                "type": "felt*"
+            }
+        ],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "tokenURI_len",
+                "type": "felt"
+            },
+            {
+                "name": "tokenURI",
+                "type": "felt*"
+            }
+        ],
+        "name": "ERC721_setBaseTokenURI",
         "outputs": [],
         "type": "function"
     }

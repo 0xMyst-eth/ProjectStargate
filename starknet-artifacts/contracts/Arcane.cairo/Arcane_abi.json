@@ -17,6 +17,58 @@
         "type": "struct"
     },
     {
+        "members": [
+            {
+                "name": "wizId",
+                "offset": 0,
+                "type": "felt"
+            },
+            {
+                "name": "wizName",
+                "offset": 1,
+                "type": "felt"
+            },
+            {
+                "name": "race",
+                "offset": 2,
+                "type": "felt"
+            },
+            {
+                "name": "class",
+                "offset": 3,
+                "type": "felt"
+            },
+            {
+                "name": "affinity",
+                "offset": 4,
+                "type": "felt"
+            },
+            {
+                "name": "character1",
+                "offset": 5,
+                "type": "felt"
+            },
+            {
+                "name": "character2",
+                "offset": 6,
+                "type": "felt"
+            },
+            {
+                "name": "mana",
+                "offset": 7,
+                "type": "felt"
+            },
+            {
+                "name": "birthday",
+                "offset": 8,
+                "type": "felt"
+            }
+        ],
+        "name": "Wizard",
+        "size": 9,
+        "type": "struct"
+    },
+    {
         "data": [
             {
                 "name": "from_",
@@ -80,7 +132,58 @@
                 "type": "felt"
             }
         ],
-        "name": "get_movability",
+        "name": "archetype",
+        "outputs": [
+            {
+                "name": "movability",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "convoyable_type",
+                "type": "felt"
+            }
+        ],
+        "name": "affinities",
+        "outputs": [
+            {
+                "name": "movability",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "convoyable_type",
+                "type": "felt"
+            }
+        ],
+        "name": "identities",
+        "outputs": [
+            {
+                "name": "movability",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "convoyable_type",
+                "type": "felt"
+            }
+        ],
+        "name": "races",
         "outputs": [
             {
                 "name": "movability",
@@ -104,6 +207,23 @@
         "name": "constructor",
         "outputs": [],
         "type": "constructor"
+    },
+    {
+        "inputs": [
+            {
+                "name": "wiz_id",
+                "type": "felt"
+            }
+        ],
+        "name": "get_wiz_infos",
+        "outputs": [
+            {
+                "name": "res",
+                "type": "Wizard"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
     },
     {
         "inputs": [

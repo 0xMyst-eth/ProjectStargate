@@ -44,6 +44,7 @@ from starkware.starknet.common.syscalls import (
 
 const MAX_STAR_SUPPLY = 1999
 const MAX_ARCANE_SUPPLY = 5555
+const PRICE = 50000000000000000
 
 # TODO: STUDY THIS
 @view
@@ -134,8 +135,20 @@ func races(convoyable_type : felt) -> (movability : felt):
     dw 5 # "Yord",
 end
 
+struct Wizard:
+    member wizId : felt
+    member wizName : felt
+    member race : felt
+    member class : felt
+    member affinity : felt
+    member character1 : felt
+    member character2 : felt
+    member mana : felt
+    member birthday : felt
+end
+
 @storage_var
-func wiz_names( wizId : felt ) -> ( name : felt ):
+func get_wizard ( wiz_id : felt ) -> ( res : Wizard ):
 end
 
 @storage_var
@@ -164,6 +177,11 @@ end
 #   VIEW
 #
 
+@view
+func get_wiz_infos { syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr} ( wiz_id : felt)->( res : Wizard ):
+    let (wiz_info_to_return ) = get_wiz_infos(wiz_id) 
+    return(wiz_info_to_return)
+end
 
 @view
 func balanceOf{syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr}(owner : felt) -> (
@@ -210,8 +228,6 @@ func mint_arcane_wiz { syscall_ptr : felt*, pedersen_ptr: HashBuiltin*, range_ch
         assert already_minted = FALSE
     end
 
-
-    
     let (curr_index) =curr_star_index.read()
     let new_index = curr_index+1
     
@@ -223,13 +239,15 @@ end
 
 @external
 func mint_star_wiz { syscall_ptr : felt* , pedersen_ptr : HashBuiltin*, range_check_ptr, bitwise_ptr : BitwiseBuiltin*  } ( wiz_name : felt ):
+    alloc_locals
     # check supply
-    let (curr_supply) = curr_star_index.read()
+    let ( local curr_supply) = curr_star_index.read()
     with_attr error_message("All Star Wizards have been summoned"):
         assert_lt(curr_supply, MAX_STAR_SUPPLY)
     end
-
-
+    let new_wiz_id = 5555+curr_supply+1
+    _mint_wiz(new_wiz_id,wiz_name)
+    curr_star_index.write(curr_supply+1)
     return()
 end
 
@@ -249,6 +267,18 @@ func _mint_wiz { syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     let (stat) = view_get_keccak_hash(block_number,name)
     let (modulo_stat : Uint256,rem : Uint256) = uint256_unsigned_div_rem(stat,Uint256(100,0))
     let (modulo_test : Uint256,rem_test : Uint256) = uint256_unsigned_div_rem(Uint256(99,0),Uint256(10,0)) 
+
+    return()
+end
+
+func banish_wiz { syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr } (wiz_id : felt):
+    let (caller) = get_caller_address()
+    let (wiz_owner) = ownerOf(Uint256(wiz_id,0))
+    with_attr erroe_message("You don't own this wizard"):
+        assert caller = wiz_owner
+    end
+
+    ERC721_burn(Uint256(wiz_id,0))
 
     return()
 end

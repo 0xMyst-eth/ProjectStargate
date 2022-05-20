@@ -1,7 +1,11 @@
 %lang starknet
 
 from starkware.cairo.common.alloc import alloc
-from starkware.cairo.common.math import (unsigned_div_rem, sqrt)
+from starkware.cairo.common.math import (
+unsigned_div_rem, 
+sqrt,
+assert_lt)
+from starkware.cairo.common.registers import get_label_location
 from starkware.cairo.common.cairo_keccak.keccak import keccak_felts, finalize_keccak
 from starkware.cairo.common.cairo_builtins import (HashBuiltin, BitwiseBuiltin)
 from starkware.starknet.common.syscalls import (get_contract_address, get_caller_address)
@@ -41,8 +45,97 @@ from starkware.starknet.common.syscalls import (
 const MAX_STAR_SUPPLY = 1999
 const MAX_ARCANE_SUPPLY = 5555
 
+# TODO: STUDY THIS
+@view
+func archetype(convoyable_type : felt) -> (movability : felt):
+    let (data_address) = get_label_location(movabilities)
+    return (cast(data_address, felt*)[convoyable_type])
+
+    movabilities:
+    dw 1 # human
+    dw 2 # food
+    dw 3 # horse
+    dw 4 # horseman
+    dw 5 # "Wizard",
+    dw 6 # "Mage",
+    dw 7 # "Priest",
+    dw 8 # "Warlock",
+    dw 9 # "Mentah",
+    dw 10 # "Sorcerer",
+    dw 11 # "Druid",
+    dw 12 # "Enchanter",
+    dw 13 # "Astronomer",
+    dw 14 # "Elementalist",
+    dw 15 # "Shadowcaster"
+end
+
+@view
+func affinities(convoyable_type : felt) -> (movability : felt):
+    let (data_address) = get_label_location(movabilities)
+    return (cast(data_address, felt*)[convoyable_type])
+
+    movabilities:
+    dw 1 # Arcane
+    dw 2 # Shadow
+    dw 3 # Divine
+    dw 4 # Elemental
+    dw 5 # Voodoo
+    dw 6 # Wild
+end
+
+@view
+func identities(convoyable_type : felt) -> (movability : felt):
+    let (data_address) = get_label_location(movabilities)
+    return (cast(data_address, felt*)[convoyable_type])
+
+    movabilities:
+    dw 1 # human
+    dw 2 # "Zen",
+    dw 3 # "Uncivilized",
+    dw 4 # "Adventurer",
+    dw 5 # "Logistician",
+    dw 6 # "Farsighted",
+    dw 7 # "Mysterious",
+    dw 8 # "Paranoiac",
+    dw 9 # "Stoic",
+    dw 10 # "Suspicious",
+    dw 11 # "Honest",
+    dw 12 # "Introvert",
+    dw 13 # "Leader",
+    dw 14 # "Quiet",
+    dw 15 # "Inspired",
+    dw 16 # "Curious",
+    dw 17 # "Veteran",
+    dw 18 # "Honest",
+    dw 19 # "Fearless",
+    dw 20 # "Calculated",
+    dw 21 # "Applied",
+    dw 22 # "Cunning",
+    dw 23 # "Spiritual",
+    dw 24 # "Tenacious",
+    dw 25 # "Scarred",
+    dw 26 # "Hermit",
+    dw 27 # "Immoral",
+    dw 28 # "Ruthless",
+    dw 29 # "Primitive",
+    dw 30 # "Brooding"
+end
+
+@view
+func races(convoyable_type : felt) -> (movability : felt):
+    let (data_address) = get_label_location(movabilities)
+    return (cast(data_address, felt*)[convoyable_type])
+
+    movabilities:
+    dw 1 # Human
+    dw 2 # Siam
+    dw 3 # Undead
+    dw 4 # Sylvan
+    dw 5 # "Yord",
+end
+
 @storage_var
-func wizardNames( wizId : felt ) -> ( name : felt ):
+func wiz_names( wizId : felt ) -> ( name : felt ):
 end
 
 @storage_var
@@ -109,30 +202,54 @@ end
 #
 
 @external
-func mintArcaneWiz { syscall_ptr : felt*, pedersen_ptr: HashBuiltin*, range_check_ptr, bitwise_ptr : BitwiseBuiltin* }( wiz_id : Uint256 , wizName : felt ):
+func mint_arcane_wiz { syscall_ptr : felt*, pedersen_ptr: HashBuiltin*, range_check_ptr, bitwise_ptr : BitwiseBuiltin* }( wiz_id : felt , wiz_name : felt ):
     alloc_locals
     # check for supply
-    let (already_minted) = arcane_minted.read(wiz_id)
+    let (already_minted) = arcane_minted.read(Uint256(wiz_id,0))
      with_attr error_message("Ownable: caller is not the owner"):
         assert already_minted = FALSE
     end
 
 
-    let (caller_address) = get_caller_address()
+    
     let (curr_index) =curr_star_index.read()
     let new_index = curr_index+1
-    ERC721_mint(caller_address,Uint256(new_index,0))
-    curr_star_index.write(new_index)
+    
+    _mint_wiz(wiz_id,wiz_name)
+    arcane_minted.write(Uint256(wiz_id,0), TRUE)
+ 
+    return()
+end
+
+@external
+func mint_star_wiz { syscall_ptr : felt* , pedersen_ptr : HashBuiltin*, range_check_ptr, bitwise_ptr : BitwiseBuiltin*  } ( wiz_name : felt ):
+    # check supply
+    let (curr_supply) = curr_star_index.read()
+    with_attr error_message("All Star Wizards have been summoned"):
+        assert_lt(curr_supply, MAX_STAR_SUPPLY)
+    end
+
+
+    return()
+end
+
+func _mint_wiz { syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, bitwise_ptr : BitwiseBuiltin*  } ( wiz_id : felt, wiz_name : felt):
+    alloc_locals
+    # mint
+    let (caller_address) = get_caller_address()
+    ERC721_mint(caller_address,Uint256(wiz_id,0))
+
+    # set name
+    local name = wiz_name
+    wiz_names.write(wiz_id, name)
 
     # get random stat
     let (block_number) = get_block_number()
     let (block_timestamp) = get_block_timestamp()
-    let (stat) = view_get_keccak_hash(block_number,wizName)
+    let (stat) = view_get_keccak_hash(block_number,name)
     let (modulo_stat : Uint256,rem : Uint256) = uint256_unsigned_div_rem(stat,Uint256(100,0))
     let (modulo_test : Uint256,rem_test : Uint256) = uint256_unsigned_div_rem(Uint256(99,0),Uint256(10,0)) 
 
-    arcane_minted.write(wiz_id, TRUE)
- 
     return()
 end
 

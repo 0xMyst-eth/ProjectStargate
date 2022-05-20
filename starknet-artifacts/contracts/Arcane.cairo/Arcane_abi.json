@@ -76,6 +76,23 @@
     {
         "inputs": [
             {
+                "name": "convoyable_type",
+                "type": "felt"
+            }
+        ],
+        "name": "get_movability",
+        "outputs": [
+            {
+                "name": "movability",
+                "type": "felt"
+            }
+        ],
+        "stateMutability": "view",
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
                 "name": "name",
                 "type": "felt"
             },
@@ -147,14 +164,25 @@
         "inputs": [
             {
                 "name": "wiz_id",
-                "type": "Uint256"
+                "type": "felt"
             },
             {
-                "name": "wizName",
+                "name": "wiz_name",
                 "type": "felt"
             }
         ],
-        "name": "mintArcaneWiz",
+        "name": "mint_arcane_wiz",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "wiz_name",
+                "type": "felt"
+            }
+        ],
+        "name": "mint_star_wiz",
         "outputs": [],
         "type": "function"
     },

@@ -4,15 +4,15 @@ const { starknet } = require("hardhat");
 describe("First test", function () {
   this.timeout(300_000);
   
-  let contract, Contract, wizard, Wizard;
+  let contract, Contract, arcane, Arcane;
   let account1;
 
   beforeEach("Should Deploy", async function(){
 
     // Contract = await starknet.getContractFactory("Hello2");
     // contract = await Contract.deploy();
-    Wizard = await starknet.getContractFactory("Wizard");
-    wizard = await Wizard.deploy({ name: starknet.shortStringToBigInt("Wizards"), symbol: starknet.shortStringToBigInt("WIZ") });
+    Arcane = await starknet.getContractFactory("Arcane");
+    arcane = await Arcane.deploy({ name: starknet.shortStringToBigInt("Arcane"), symbol: starknet.shortStringToBigInt("ARC") });
 
     console.log("Deployed!");
 
@@ -40,15 +40,18 @@ describe("First test", function () {
   });
 
   it("Should mint a wizard", async function() {
-    let accountBalance = await wizard.call("balanceOf", { owner: BigInt(account1.starknetContract.address) });
+    let accountBalance = await arcane.call("balanceOf", { owner: BigInt(account1.starknetContract.address) });
     console.log("balance is ", accountBalance);
-    await account1.invoke(wizard, "mintWiz", { wizName: starknet.shortStringToBigInt("gropd")});
+    await account1.invoke(arcane, "mint_star_mage", { wiz_name: starknet.shortStringToBigInt("hello")});
+    accountBalance = await arcane.call("balanceOf", { owner: BigInt(account1.starknetContract.address) });
+
+    let wizInfos = await arcane.call("get_wiz_infos", { wiz_id: BigInt(0)});
+    console.log("wiz infos: ",wizInfos);
     // accountBalance = await wizard.call("balanceOf", { owner: BigInt(account1.starknetContract.address) });
     // console.log("balance is ", accountBalance);
     // await account1.invoke(wizard, "mintWiz", { wizName: starknet.shortStringToBigInt("gropd2")});
     // accountBalance = await wizard.call("balanceOf", { owner: BigInt(account1.starknetContract.address) });
     // console.log("balance is ", accountBalance);
-    let wizStat = await account1.call(wizard, "get_stats", { wiz_id: 1});
-    console.log("Wizname from infos are :" , wizStat);
+    // let wizStat = await account1.call(wizard, "get_stats", { wiz_id: 1});
   });
 });

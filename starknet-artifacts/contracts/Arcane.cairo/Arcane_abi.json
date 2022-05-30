@@ -291,7 +291,7 @@
                 "type": "felt"
             }
         ],
-        "name": "mint_arcane_wiz",
+        "name": "mint_arcane_mage",
         "outputs": [],
         "type": "function"
     },
@@ -302,7 +302,33 @@
                 "type": "felt"
             }
         ],
-        "name": "mint_star_wiz",
+        "name": "mint_star_mage",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "wiz_id",
+                "type": "felt"
+            }
+        ],
+        "name": "banish_wiz",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "wiz_arr_len",
+                "type": "felt"
+            },
+            {
+                "name": "wiz_arr",
+                "type": "felt*"
+            }
+        ],
+        "name": "whitelist_arcanes",
         "outputs": [],
         "type": "function"
     },

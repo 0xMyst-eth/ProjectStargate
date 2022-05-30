@@ -44,6 +44,7 @@ from starkware.starknet.common.syscalls import (
 
 const MAX_STAR_SUPPLY = 1999
 const MAX_ARCANE_SUPPLY = 5555
+# TODO: check sending erc20
 const PRICE = 50000000000000000
 
 # TODO: STUDY THIS
@@ -147,6 +148,22 @@ struct Wizard:
     member birthday : felt
 end
 
+struct Skills:
+    member focus :felt
+    member strength : felt
+    member intellect : felt
+    member spell : felt
+    member endurance : felt
+end
+
+@storage_var
+func get_base_skill( wiz_id : felt, skill_id : felt) -> ( res  : felt ):
+end
+
+@storage_var
+func wiz_base_skills(wiz_id : felt) -> ( res : Skills):
+end
+
 @storage_var
 func get_wizard ( wiz_id : felt ) -> ( res : Wizard ):
 end
@@ -179,7 +196,7 @@ end
 
 @view
 func get_wiz_infos { syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr} ( wiz_id : felt)->( res : Wizard ):
-    let (wiz_info_to_return ) = get_wiz_infos(wiz_id) 
+    let (wiz_info_to_return ) = get_wizard.read(wiz_id) 
     return(wiz_info_to_return)
 end
 
@@ -220,7 +237,7 @@ end
 #
 
 @external
-func mint_arcane_wiz { syscall_ptr : felt*, pedersen_ptr: HashBuiltin*, range_check_ptr, bitwise_ptr : BitwiseBuiltin* }( wiz_id : felt , wiz_name : felt ):
+func mint_arcane_mage { syscall_ptr : felt*, pedersen_ptr: HashBuiltin*, range_check_ptr, bitwise_ptr : BitwiseBuiltin* }( wiz_id : felt , wiz_name : felt ):
     alloc_locals
     # check for supply
     let (already_minted) = arcane_minted.read(Uint256(wiz_id,0))
@@ -238,7 +255,7 @@ func mint_arcane_wiz { syscall_ptr : felt*, pedersen_ptr: HashBuiltin*, range_ch
 end
 
 @external
-func mint_star_wiz { syscall_ptr : felt* , pedersen_ptr : HashBuiltin*, range_check_ptr, bitwise_ptr : BitwiseBuiltin*  } ( wiz_name : felt ):
+func mint_star_mage { syscall_ptr : felt* , pedersen_ptr : HashBuiltin*, range_check_ptr, bitwise_ptr : BitwiseBuiltin*  } ( wiz_name : felt ):
     alloc_locals
     # check supply
     let ( local curr_supply) = curr_star_index.read()
@@ -251,26 +268,80 @@ func mint_star_wiz { syscall_ptr : felt* , pedersen_ptr : HashBuiltin*, range_ch
     return()
 end
 
+
 func _mint_wiz { syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr, bitwise_ptr : BitwiseBuiltin*  } ( wiz_id : felt, wiz_name : felt):
     alloc_locals
     # mint
     let (caller_address) = get_caller_address()
-    ERC721_mint(caller_address,Uint256(wiz_id,0))
+    local wiz_id = 0
+    ERC721_mint(caller_address,Uint256(wiz_id,0))  
 
-    # set name
-    local name = wiz_name
-    wiz_names.write(wiz_id, name)
-
-    # get random stat
+    # get random stats from 10 randoms
+    let (local values : felt* ) = alloc()
+    
     let (block_number) = get_block_number()
     let (block_timestamp) = get_block_timestamp()
-    let (stat) = view_get_keccak_hash(block_number,name)
-    let (modulo_stat : Uint256,rem : Uint256) = uint256_unsigned_div_rem(stat,Uint256(100,0))
+    let (longhash) = view_get_keccak_hash(block_number,wiz_name)
+
+    let (_,rands_len,rands) = get_randoms(longhash,10, values)
+
+    %{ print("Hello world! ", ids.rands_len) %}
+
+    let (modulo_stat : Uint256,rem : Uint256) = uint256_unsigned_div_rem(longhash,Uint256(100,0))
     let (modulo_test : Uint256,rem_test : Uint256) = uint256_unsigned_div_rem(Uint256(99,0),Uint256(10,0)) 
+
+    let new_race = rands[0]
+    let new_class = rands[1]
+    let new_affinity = rands[2]
+    let new_char1 = rands[3]
+    let new_char2 = rands[4]
+    let new_focus = rands[5]
+    let new_strength = rands[6]
+    let new_intellect = rands[7]
+    let new_spell = rands[8]
+    let new_endurance = rands[9]
+
+    let new_wizard = Wizard(wizId=wiz_id
+        ,wizName=wiz_name
+        ,race=new_race
+        ,class=new_class
+        ,affinity=new_affinity
+        ,character1=new_char1
+        ,character2=new_char2
+        ,mana=240
+        ,birthday=0)
+    let new_skills = Skills(focus=new_focus
+        ,strength=new_strength
+        ,intellect=new_intellect
+        ,spell=new_spell
+        ,endurance=new_endurance)
+    
+    wiz_base_skills.write(wiz_id,new_skills)
+    get_wizard.write(wiz_id,new_wizard)
 
     return()
 end
 
+func get_randoms{syscall_ptr:felt*,pedersen_ptr:HashBuiltin*,range_check_ptr}(curr_hash :Uint256, arr_len : felt, arr : felt*)->( res_hash :Uint256, res_len : felt , res : felt*):
+    alloc_locals
+    if arr_len==0:
+        return(curr_hash, 0, arr)
+    end
+    local local_curr_hash : Uint256 = curr_hash
+    # return if what's left on the hash is lower than 100
+    assert_lt(100,local_curr_hash.low)
+
+    let ( returned_hash, returned_len, returned_arr ) = get_randoms(curr_hash = local_curr_hash, arr_len = arr_len-1, arr= arr+1)
+    # get the reminder for a new 0-99 random that goes into the array slot
+    # and divide the current hash by 100 to go get the next 100 in the next recursion
+    let ( new_hash, rand_uint : Uint256) = uint256_unsigned_div_rem(returned_hash, Uint256(100,0))
+    let rand_felt = rand_uint.low
+    assert [arr] = rand_felt
+
+    return (new_hash, arr_len, arr)
+end
+
+@external
 func banish_wiz { syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr } (wiz_id : felt):
     let (caller) = get_caller_address()
     let (wiz_owner) = ownerOf(Uint256(wiz_id,0))
@@ -282,6 +353,21 @@ func banish_wiz { syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_
 
     return()
 end
+
+@external
+func whitelist_arcanes { syscall_ptr : felt*, pedersen_ptr: HashBuiltin*, range_check_ptr } ( wiz_arr_len : felt, wiz_arr : felt* ):
+    Ownable_only_owner()
+    if wiz_arr_len==0:
+        return()
+    end
+
+    whitelist_arcanes(wiz_arr_len = wiz_arr_len-1, wiz_arr = wiz_arr+1)
+    let wiz_id = Uint256([wiz_arr],0)
+    arcane_minted.write(wiz_id, TRUE)
+
+    return()
+end
+
 
 #
 #   ERC721

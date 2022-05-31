@@ -46,6 +46,7 @@ const MAX_STAR_SUPPLY = 1999
 const MAX_ARCANE_SUPPLY = 5555
 # TODO: check sending erc20
 const PRICE = 50000000000000000
+const ETH_CONTRACT = 2087021424722619777119509474943472645767659996348769578120564519014510906823
 
 # TODO: STUDY THIS
 @view
@@ -151,6 +152,20 @@ struct Skills:
     member endurance : felt
 end
 
+@contract_interface
+namespace IERC20:
+    func transfer(recipient: felt, amount: Uint256) -> (success: felt):
+    end
+    func transferFrom(
+            sender: felt,
+            recipient: felt,
+            amount: Uint256
+        ) -> (success: felt):
+    end
+    func balanceOf(account: felt) -> (balance: Uint256):
+    end
+end 
+
 @storage_var
 func get_base_skill( wiz_id : felt, skill_id : felt) -> ( res  : felt ):
 end
@@ -177,6 +192,14 @@ end
 
 @storage_var
 func ERC721_base_tokenURI_len() -> (res: felt):
+end
+
+@storage_var
+func connected( address : felt ) -> ( res : felt ):
+end
+
+@storage_var
+func vault ()->( res : felt):
 end
 
 @constructor
@@ -257,6 +280,10 @@ func mint_star_mage { syscall_ptr : felt* , pedersen_ptr : HashBuiltin*, range_c
     with_attr error_message("All Star Wizards have been summoned"):
         assert_lt(curr_supply, MAX_STAR_SUPPLY)
     end
+    # check payment
+    let (this_address) = get_contract_address()
+    let (sucess) = IERC20.transfer(ETH_CONTRACT,this_address,Uint256(PRICE,0))
+
     let new_wiz_id = 5555+curr_supply+1
     _mint_wiz(new_wiz_id,wiz_name)
     curr_star_index.write(curr_supply+1)
@@ -355,10 +382,25 @@ func get_randoms{syscall_ptr:felt*,pedersen_ptr:HashBuiltin*,range_check_ptr}(
 end
 
 @external
+func use_mana { syscall_ptr:felt*,pedersen_ptr:HashBuiltin*,range_check_ptr}(wiz_id :felt, amount : felt):
+    let (caller_address) = get_caller_address()
+    let (is_caller_connected) = connected.read(caller_address)
+    with_attr error_message("Not authorized"):
+        assert is_caller_connected=TRUE
+    end
+
+    let (wiz) = get_wizard.read(wiz_id)
+    let curr_wiz_mana = wiz.mana
+    let new_mana = curr_wiz_mana - amount
+    # let is_highe
+    return()
+end
+
+@external
 func banish_wiz { syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_ptr } (wiz_id : felt):
     let (caller) = get_caller_address()
     let (wiz_owner) = ownerOf(Uint256(wiz_id,0))
-    with_attr erroe_message("You don't own this wizard"):
+    with_attr error_message("You don't own this wizard"):
         assert caller = wiz_owner
     end
 
@@ -483,4 +525,21 @@ func _ERC721_setBaseTokenURI{
     ERC721_base_tokenURI.write(index=tokenURI_len, value=[tokenURI])
     _ERC721_setBaseTokenURI(tokenURI_len=tokenURI_len - 1, tokenURI=tokenURI + 1)
     return ()
+end
+
+@external
+func withdraw {syscall_ptr:felt*,pedersen_ptr:HashBuiltin*,range_check_ptr}():
+    # send to vault
+    let (this_address) = get_contract_address()
+    let (caller_address) = get_caller_address()
+    let (balance) = IERC20.balanceOf(ETH_CONTRACT,this_address)
+    IERC20.transferFrom(ETH_CONTRACT,this_address,caller_address,balance)
+    return()
+end
+
+@external
+func set_vault{syscall_ptr:felt*,pedersen_ptr:HashBuiltin*,range_check_ptr}(address : felt ):
+    Ownable_only_owner()
+    vault.write(address)
+    return()
 end

@@ -54,21 +54,17 @@ func archetype(convoyable_type : felt) -> (movability : felt):
     return (cast(data_address, felt*)[convoyable_type])
 
     movabilities:
-    dw 1 # human
-    dw 2 # food
-    dw 3 # horse
-    dw 4 # horseman
-    dw 5 # "Wizard",
-    dw 6 # "Mage",
-    dw 7 # "Priest",
-    dw 8 # "Warlock",
-    dw 9 # "Mentah",
-    dw 10 # "Sorcerer",
-    dw 11 # "Druid",
-    dw 12 # "Enchanter",
-    dw 13 # "Astronomer",
-    dw 14 # "Elementalist",
-    dw 15 # "Shadowcaster"
+    dw 1 # "Wizard",
+    dw 2 # "Mage",
+    dw 3 # "Priest",
+    dw 4 # "Warlock",
+    dw 5 # "Mentah",
+    dw 6 # "Sorcerer",
+    dw 7 # "Druid",
+    dw 8 # "Enchanter",
+    dw 9 # "Astronomer",
+    dw 10 # "Elementalist",
+    dw 11 # "Shadowcaster"
 end
 
 @view
@@ -91,36 +87,35 @@ func identities(convoyable_type : felt) -> (movability : felt):
     return (cast(data_address, felt*)[convoyable_type])
 
     movabilities:
-    dw 1 # human
-    dw 2 # "Zen",
-    dw 3 # "Uncivilized",
-    dw 4 # "Adventurer",
-    dw 5 # "Logistician",
-    dw 6 # "Farsighted",
-    dw 7 # "Mysterious",
-    dw 8 # "Paranoiac",
-    dw 9 # "Stoic",
-    dw 10 # "Suspicious",
-    dw 11 # "Honest",
-    dw 12 # "Introvert",
-    dw 13 # "Leader",
-    dw 14 # "Quiet",
-    dw 15 # "Inspired",
-    dw 16 # "Curious",
-    dw 17 # "Veteran",
-    dw 18 # "Honest",
-    dw 19 # "Fearless",
-    dw 20 # "Calculated",
-    dw 21 # "Applied",
-    dw 22 # "Cunning",
-    dw 23 # "Spiritual",
-    dw 24 # "Tenacious",
-    dw 25 # "Scarred",
-    dw 26 # "Hermit",
-    dw 27 # "Immoral",
-    dw 28 # "Ruthless",
-    dw 29 # "Primitive",
-    dw 30 # "Brooding"
+    dw 1 # "Zen",
+    dw 2 # "Uncivilized",
+    dw 3 # "Adventurer",
+    dw 4 # "Logistician",
+    dw 5 # "Farsighted",
+    dw 6 # "Mysterious",
+    dw 7 # "Paranoiac",
+    dw 8 # "Stoic",
+    dw 9 # "Suspicious",
+    dw 10 # "Honest",
+    dw 11 # "Introvert",
+    dw 12 # "Leader",
+    dw 13 # "Quiet",
+    dw 14 # "Inspired",
+    dw 15 # "Curious",
+    dw 16 # "Veteran",
+    dw 17 # "Honest",
+    dw 18 # "Fearless",
+    dw 19 # "Calculated",
+    dw 20 # "Applied",
+    dw 21 # "Cunning",
+    dw 22 # "Spiritual",
+    dw 23 # "Tenacious",
+    dw 24 # "Scarred",
+    dw 25 # "Hermit",
+    dw 26 # "Immoral",
+    dw 27 # "Ruthless",
+    dw 28 # "Primitive",
+    dw 29 # "Brooding"
 end
 
 @view
@@ -282,10 +277,21 @@ func _mint_wiz { syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     let (block_number) = get_block_number()
     let (block_timestamp) = get_block_timestamp()
     let (longhash) = view_get_keccak_hash(block_number,wiz_name)
+    #make array of modulos
+    let (local modulos : felt*) = alloc()
 
-    let (_,rands_len,rands) = get_randoms(longhash,10, values)
+    assert [modulos] = 5
+    assert [modulos+1] = 11
+    assert [modulos+2] = 6
+    assert [modulos+3] = 29
+    assert [modulos+4] = 29
+    assert [modulos+5] = 6
+    assert [modulos+6] = 6
+    assert [modulos+7] = 6
+    assert [modulos+8] = 6
+    assert [modulos+9] = 6
+    let (_,rands_len,rands) = get_randoms(10,10,modulos,longhash,10, values)
 
-    %{ print("Hello world! ", ids.rands_len) %}
 
     let (modulo_stat : Uint256,rem : Uint256) = uint256_unsigned_div_rem(longhash,Uint256(100,0))
     let (modulo_test : Uint256,rem_test : Uint256) = uint256_unsigned_div_rem(Uint256(99,0),Uint256(10,0)) 
@@ -322,7 +328,14 @@ func _mint_wiz { syscall_ptr : felt*, pedersen_ptr : HashBuiltin*, range_check_p
     return()
 end
 
-func get_randoms{syscall_ptr:felt*,pedersen_ptr:HashBuiltin*,range_check_ptr}(curr_hash :Uint256, arr_len : felt, arr : felt*)->( res_hash :Uint256, res_len : felt , res : felt*):
+func get_randoms{syscall_ptr:felt*,pedersen_ptr:HashBuiltin*,range_check_ptr}(
+        start_len : felt
+        ,modulos_len : felt
+        ,modulos : felt*
+        , curr_hash :Uint256
+        , arr_len : felt
+        , arr : felt*
+    )->( res_hash :Uint256, res_len : felt , res : felt*):
     alloc_locals
     if arr_len==0:
         return(curr_hash, 0, arr)
@@ -331,10 +344,10 @@ func get_randoms{syscall_ptr:felt*,pedersen_ptr:HashBuiltin*,range_check_ptr}(cu
     # return if what's left on the hash is lower than 100
     assert_lt(100,local_curr_hash.low)
 
-    let ( returned_hash, returned_len, returned_arr ) = get_randoms(curr_hash = local_curr_hash, arr_len = arr_len-1, arr= arr+1)
-    # get the reminder for a new 0-99 random that goes into the array slot
-    # and divide the current hash by 100 to go get the next 100 in the next recursion
-    let ( new_hash, rand_uint : Uint256) = uint256_unsigned_div_rem(returned_hash, Uint256(100,0))
+    let ( returned_hash, returned_len, returned_arr ) = get_randoms(start_len=start_len,modulos_len=modulos_len-1,modulos=modulos+1, curr_hash = local_curr_hash, arr_len = arr_len-1, arr= arr+1)
+   
+    let curr_modulo = [modulos]
+    let ( new_hash, rand_uint : Uint256) = uint256_unsigned_div_rem(returned_hash, Uint256(curr_modulo,0))
     let rand_felt = rand_uint.low
     assert [arr] = rand_felt
 

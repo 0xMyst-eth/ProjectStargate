@@ -47,11 +47,6 @@ describe("First test", function () {
 
     let wizInfos = await arcane.call("get_wiz_infos", { wiz_id: BigInt(0)});
     console.log("wiz infos: ",wizInfos);
-    // accountBalance = await wizard.call("balanceOf", { owner: BigInt(account1.starknetContract.address) });
-    // console.log("balance is ", accountBalance);
-    // await account1.invoke(wizard, "mintWiz", { wizName: starknet.shortStringToBigInt("gropd2")});
-    // accountBalance = await wizard.call("balanceOf", { owner: BigInt(account1.starknetContract.address) });
-    // console.log("balance is ", accountBalance);
-    // let wizStat = await account1.call(wizard, "get_stats", { wiz_id: 1});
+  
   });
 });

@@ -2,48 +2,54 @@ const { expect } = require("chai");
 const { starknet } = require("hardhat");
 
 describe("First test", function () {
-  this.timeout(300_000);
+  this.timeout(800_000);
   
-  let contract, Contract, arcane, Arcane;
-  let account1;
+  let dummyCoin, DummyCoin, arcane, Arcane;
+  let account1, account2;
 
   beforeEach("Should Deploy", async function(){
 
-    // Contract = await starknet.getContractFactory("Hello2");
-    // contract = await Contract.deploy();
+    account1 = await starknet.deployAccount("OpenZeppelin");
+    account2 =await starknet.deployAccount("OpenZeppelin");
+
     Arcane = await starknet.getContractFactory("Arcane");
     arcane = await Arcane.deploy({ name: starknet.shortStringToBigInt("Arcane"), symbol: starknet.shortStringToBigInt("ARC") });
+    DummyCoin = await starknet.getContractFactory("DummyCoin");
+    dummyCoin = await DummyCoin.deploy( { name: starknet.shortStringToBigInt("DUMMY"), symbol : starknet.shortStringToBigInt("DUM"), decimals: BigInt(18), initial_supply: { low: 5000000000000000, high: 0 }, recipient: BigInt(account1.starknetContract.address)});
+    
 
     console.log("Deployed!");
-
-    account1 = await starknet.deployAccount("OpenZeppelin");
     // console.log("Account Address is ",BigInt(account1.starknetContract.address));
-
-  });
-  
-  xit("Test", async function () {
-    await contract.invoke("set_authority", { authority_address: BigInt(account1.starknetContract.address)});
- 
-    await account1.invoke(contract, "set_player_age", { player_id: 0, age: 27 });
-    await account1.invoke(contract, "set_player_age", { player_id: 1, age: 56 });
-    await account1.invoke(contract, "set_player_age", { player_id: 2, age: 11 });
-    await account1.invoke(contract, "set_player_age", { player_id: 3, age: 35 });
-    await account1.invoke(contract, "set_player_age", { player_id: 4, age: 8 });
+    let balance1  =await dummyCoin.call("balanceOf", { account: BigInt(account1.starknetContract.address)});
+    console.log("balance is: ", balance1);
+    await arcane.invoke("set_eth", { address: dummyCoin.address });
 
 
-    let playerAge = await contract.call("get_player_age", { player_id: 10 })
-
-    let ageArray = await contract.call("get_player_ages", { start_id : 0, end_id : 5 });
-    console.log("yoo : ", ageArray);
-    
-    console.log("Playe Age: ", playerAge);
   });
 
   it("Should mint a wizard", async function() {
+    let approved = await account1.invoke(dummyCoin,"approve",{ spender : arcane.address, amount : { low:50000000000000000, high:0 }});
     let accountBalance = await arcane.call("balanceOf", { owner: BigInt(account1.starknetContract.address) });
     console.log("balance is ", accountBalance);
     await account1.invoke(arcane, "mint_star_mage", { wiz_name: starknet.shortStringToBigInt("hello")});
     accountBalance = await arcane.call("balanceOf", { owner: BigInt(account1.starknetContract.address) });
+    let balance1  =await dummyCoin.call("balanceOf", { account: BigInt(account1.starknetContract.address)});
+    let balance3  =await dummyCoin.call("balanceOf", { account: BigInt(account2.starknetContract.address)});
+    let balance2  =await dummyCoin.call("balanceOf", { account: BigInt(arcane.address)});
+    console.log("ETH balnce of acc1: ", balance1);
+    console.log("ETH balnce of acc2: ", balance3);
+    console.log("ETH balnce of Arcane: ", balance2);
+
+    // transfer owner
+    await arcane.invoke("transfer_ownership", { new_owner : account2.starknetContract.address });
+    await account2.invoke(arcane, "allowance_withdraw", { amount : 500000000000000000000 })
+    await account2.invoke(arcane, "withdraw");
+    balance1  =await dummyCoin.call("balanceOf", { account: BigInt(account1.starknetContract.address)});
+    balance2  =await dummyCoin.call("balanceOf", { account: BigInt(account1.starknetContract.address)});
+
+    console.log("ETH balnce of acc1: ", balance1);
+    console.log("ETH balnce of acc2: ", balance2);
+
 
     let wizInfos = await arcane.call("get_wiz_infos", { wiz_id: BigInt(0)});
     console.log("wiz infos: ",wizInfos);

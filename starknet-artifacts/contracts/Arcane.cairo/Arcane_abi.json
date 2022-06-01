@@ -459,6 +459,17 @@
         "type": "function"
     },
     {
+        "inputs": [
+            {
+                "name": "amount",
+                "type": "felt"
+            }
+        ],
+        "name": "allowance_withdraw",
+        "outputs": [],
+        "type": "function"
+    },
+    {
         "inputs": [],
         "name": "withdraw",
         "outputs": [],
@@ -472,6 +483,28 @@
             }
         ],
         "name": "set_vault",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "address",
+                "type": "felt"
+            }
+        ],
+        "name": "set_eth",
+        "outputs": [],
+        "type": "function"
+    },
+    {
+        "inputs": [
+            {
+                "name": "new_owner",
+                "type": "felt"
+            }
+        ],
+        "name": "transfer_ownership",
         "outputs": [],
         "type": "function"
     }

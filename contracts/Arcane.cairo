@@ -31,7 +31,9 @@ from starkware.cairo.common.uint256 import (
     Uint256, uint256_add, uint256_sub, uint256_le, uint256_lt, uint256_check, uint256_eq, uint256_unsigned_div_rem
 )
 from openzeppelin.access.ownable import (
-    Ownable_only_owner
+    Ownable_initializer,
+    Ownable_only_owner,
+    Ownable_transfer_ownership
 )
 from openzeppelin.token.erc721.library import _exists
 from openzeppelin.utils.ShortString import uint256_to_ss
@@ -45,7 +47,8 @@ from starkware.starknet.common.syscalls import (
 const MAX_STAR_SUPPLY = 1999
 const MAX_ARCANE_SUPPLY = 5555
 # TODO: check sending erc20
-const PRICE = 50000000000000000
+# const PRICE = 50000000000000000
+const PRICE = 1000000000000000
 const ETH_CONTRACT = 2087021424722619777119509474943472645767659996348769578120564519014510906823
 
 # TODO: STUDY THIS
@@ -164,7 +167,14 @@ namespace IERC20:
     end
     func balanceOf(account: felt) -> (balance: Uint256):
     end
+    func approve(spender: felt, amount: Uint256) -> (success: felt):
+    end
 end 
+
+#TESTESTEST
+@storage_var
+func eth_temp ()-> (res : felt):
+end
 
 @storage_var
 func get_base_skill( wiz_id : felt, skill_id : felt) -> ( res  : felt ):
@@ -205,6 +215,8 @@ end
 @constructor
 func constructor { syscall_ptr: felt*, pedersen_ptr: HashBuiltin*, range_check_ptr }( name : felt, symbol : felt ):
     ERC721_initializer(name, symbol)
+    let (caller_address) = get_caller_address()
+    Ownable_initializer(caller_address)
     return()
 end
 
@@ -282,7 +294,9 @@ func mint_star_mage { syscall_ptr : felt* , pedersen_ptr : HashBuiltin*, range_c
     end
     # check payment
     let (this_address) = get_contract_address()
-    let (sucess) = IERC20.transfer(ETH_CONTRACT,this_address,Uint256(PRICE,0))
+    let (caller_address) = get_caller_address()
+    let (eth_address) = eth_temp.read()
+    let (sucess) = IERC20.transferFrom(eth_address, caller_address ,this_address,Uint256(PRICE,0))
 
     let new_wiz_id = 5555+curr_supply+1
     _mint_wiz(new_wiz_id,wiz_name)
@@ -528,12 +542,23 @@ func _ERC721_setBaseTokenURI{
 end
 
 @external
+func allowance_withdraw{syscall_ptr:felt*,pedersen_ptr:HashBuiltin*,range_check_ptr}(amount : felt):
+    Ownable_only_owner()
+    let (caller_address) = get_caller_address()
+    let (eth_address) = eth_temp.read()
+    IERC20.approve(eth_address,caller_address,Uint256(amount,0))
+    return()
+end
+
+@external
 func withdraw {syscall_ptr:felt*,pedersen_ptr:HashBuiltin*,range_check_ptr}():
     # send to vault
+    Ownable_only_owner()
     let (this_address) = get_contract_address()
     let (caller_address) = get_caller_address()
-    let (balance) = IERC20.balanceOf(ETH_CONTRACT,this_address)
-    IERC20.transferFrom(ETH_CONTRACT,this_address,caller_address,balance)
+    let (eth_address) = eth_temp.read()
+    let (balance) = IERC20.balanceOf(eth_address,this_address)
+    IERC20.transferFrom(eth_address,this_address,caller_address,balance)
     return()
 end
 
@@ -541,5 +566,18 @@ end
 func set_vault{syscall_ptr:felt*,pedersen_ptr:HashBuiltin*,range_check_ptr}(address : felt ):
     Ownable_only_owner()
     vault.write(address)
+    return()
+end
+
+@external
+func set_eth{syscall_ptr: felt*,pedersen_ptr: HashBuiltin*,range_check_ptr}( address : felt):
+    eth_temp.write(address)
+    return()
+end
+
+@external
+func transfer_ownership{syscall_ptr:felt*,pedersen_ptr:HashBuiltin*,range_check_ptr}(new_owner : felt ):
+    Ownable_only_owner()
+    Ownable_transfer_ownership(new_owner)
     return()
 end

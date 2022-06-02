@@ -45,7 +45,7 @@ describe("First test", function () {
     await account2.invoke(arcane, "allowance_withdraw", { amount : 500000000000000000000 })
     await account2.invoke(arcane, "withdraw");
     balance1  =await dummyCoin.call("balanceOf", { account: BigInt(account1.starknetContract.address)});
-    balance2  =await dummyCoin.call("balanceOf", { account: BigInt(account1.starknetContract.address)});
+    balance2  =await dummyCoin.call("balanceOf", { account: BigInt(account2.starknetContract.address)});
 
     console.log("ETH balnce of acc1: ", balance1);
     console.log("ETH balnce of acc2: ", balance2);

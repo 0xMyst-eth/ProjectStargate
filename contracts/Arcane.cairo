@@ -169,6 +169,8 @@ namespace IERC20:
     end
     func approve(spender: felt, amount: Uint256) -> (success: felt):
     end
+    func allowance(owner: felt, spender: felt) -> (remaining: Uint256):
+    end
 end 
 
 #TESTESTEST
@@ -544,7 +546,7 @@ end
 @external
 func allowance_withdraw{syscall_ptr:felt*,pedersen_ptr:HashBuiltin*,range_check_ptr}(amount : felt):
     Ownable_only_owner()
-    let (caller_address) = get_caller_address()
+    let (caller_address) = get_contract_address()
     let (eth_address) = eth_temp.read()
     IERC20.approve(eth_address,caller_address,Uint256(amount,0))
     return()
@@ -558,6 +560,9 @@ func withdraw {syscall_ptr:felt*,pedersen_ptr:HashBuiltin*,range_check_ptr}():
     let (caller_address) = get_caller_address()
     let (eth_address) = eth_temp.read()
     let (balance) = IERC20.balanceOf(eth_address,this_address)
+    let (allowance) = IERC20.allowance(eth_address, this_address,caller_address)
+    %{ print("allowance is: ", ids.allowance.low) %}
+    %{ print("balance is: ", ids.balance.low) %}
     IERC20.transferFrom(eth_address,this_address,caller_address,balance)
     return()
 end
